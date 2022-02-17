@@ -10,7 +10,8 @@ import { getBaseUrl } from '../utils/getBaseUrl'
 import { humanFileSize, formatModifiedDateTime } from '../utils/fileDetails'
 import { getReadablePath } from '../utils/getReadablePath'
 
-import { Downloading, Checkbox, formatChildName, ChildIcon } from './FileListing'
+import { Downloading, Checkbox, ChildIcon, ChildName } from './FileListing'
+import { getStoredToken } from '../utils/protectedRouteHandler'
 
 const FileListItem: FC<{ fileContent: OdFolderChildren }> = ({ fileContent: c }) => {
   return (
@@ -19,7 +20,7 @@ const FileListItem: FC<{ fileContent: OdFolderChildren }> = ({ fileContent: c })
         <div className="w-5 flex-shrink-0 text-center">
           <ChildIcon child={c} />
         </div>
-        <div className="truncate">{formatChildName(c.name)}</div>
+        <ChildName name={c.name} folder={Boolean(c.folder)} />
       </div>
       <div className="col-span-3 hidden flex-shrink-0 font-mono text-sm text-gray-700 dark:text-gray-500 md:block">
         {formatModifiedDateTime(c.lastModifiedDateTime)}
@@ -45,8 +46,12 @@ const FolderListLayout = ({
   toast,
 }) => {
   const clipboard = useClipboard()
+  const hashedToken = getStoredToken(path)
 
   const { t } = useTranslation()
+
+  // Get item path from item name
+  const getItemPath = (name: string) => `${path === '/' ? '' : path}/${encodeURIComponent(name)}`
 
   return (
     <div className="rounded bg-white dark:bg-gray-900 dark:text-gray-100">
@@ -72,7 +77,7 @@ const FolderListLayout = ({
               title={t('Select files')}
             />
             {totalGenerating ? (
-              <Downloading title={t('Downloading selected files, refresh page to cancel')} />
+              <Downloading title={t('Downloading selected files, refresh page to cancel')} style="p-1.5" />
             ) : (
               <button
                 title={t('Download selected files')}
@@ -93,7 +98,7 @@ const FolderListLayout = ({
           key={c.id}
         >
           <Link href={`${path === '/' ? '' : path}/${encodeURIComponent(c.name)}`} passHref>
-            <a className="col-span-10">
+            <a className="col-span-12 md:col-span-10">
               <FileListItem fileContent={c} />
             </a>
           </Link>
@@ -113,7 +118,7 @@ const FolderListLayout = ({
                 <FontAwesomeIcon icon={['far', 'copy']} />
               </span>
               {folderGenerating[c.id] ? (
-                <Downloading title={t('Downloading folder, refresh page to cancel')} />
+                <Downloading title={t('Downloading folder, refresh page to cancel')} style="px-1.5 py-1" />
               ) : (
                 <span
                   title={t('Download folder')}
@@ -134,9 +139,9 @@ const FolderListLayout = ({
                 className="cursor-pointer rounded px-1.5 py-1 hover:bg-gray-300 dark:hover:bg-gray-600"
                 onClick={() => {
                   clipboard.copy(
-                    `${getBaseUrl()}/api?path=${getReadablePath(
-                      `${path === '/' ? '' : path}/${encodeURIComponent(c.name)}`
-                    )}&raw=true`
+                    `${getBaseUrl()}/api/raw/?path=${getReadablePath(getItemPath(c.name))}${
+                      hashedToken ? `&odpt=${hashedToken}` : ''
+                    }`
                   )
                   toast.success(t('Copied raw file permalink.'))
                 }}
@@ -146,7 +151,7 @@ const FolderListLayout = ({
               <a
                 title={t('Download file')}
                 className="cursor-pointer rounded px-1.5 py-1 hover:bg-gray-300 dark:hover:bg-gray-600"
-                href={c['@microsoft.graph.downloadUrl']}
+                href={`/api/raw/?path=${getItemPath(c.name)}${hashedToken ? `&odpt=${hashedToken}` : ''}`}
               >
                 <FontAwesomeIcon icon={['far', 'arrow-alt-circle-down']} />
               </a>

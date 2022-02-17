@@ -1,5 +1,4 @@
 import '../styles/globals.css'
-import '../styles/prism-vsc-dark.css'
 import '../styles/markdown-github.css'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -25,6 +24,7 @@ import {
 } from '@fortawesome/free-regular-svg-icons'
 import {
   faSearch,
+  faPen,
   faCheck,
   faPlus,
   faMinus,
@@ -109,6 +109,7 @@ library.add(
   faThLarge,
   faThList,
   faLanguage,
+  faPen,
   ...iconList
 )
 
